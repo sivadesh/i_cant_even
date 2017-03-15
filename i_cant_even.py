@@ -45,16 +45,22 @@ def getNumberOfBusinesses(business_type, zip_code):
 	# Get number of businesses per zip code
 	yelp_api = YelpAPI('Icci0UP1WX7R0wrGfLEYCw', 'lWMwaew0FlWFRZVXZIqIKjIhYneiPkFiIWioqk1YsdLkVgbRUGhgS9velfSGoioT')
 
-	search_results = yelp_api.search_query(term=business_type, location=zip_code)
+	business_count = 0
+	search_results = yelp_api.search_query(term=business_type, location=zip_code, limit = 50)
 	# print str(zip_code) + " " +str(search_results['total'])
-	return search_results['total']
+	for business in search_results['businesses']:
+		if(business['location']['zip_code'] == zip_code):
+			#print business['name'] + " " + business['location']['zip_code']
+			business_count += 1
+	return business_count
 
 
 work_zip_code = getWorkZipCode(work_address)
 zip_codes = getAllRadiusZipCodes(work_zip_code,travel_distance)
+restaurants = {}
 for zip_code in zip_codes:
-	restaurants = getNumberOfBusinesses("restaurant", zip_code)
-	bars = getNumberOfBusinesses("bar", zip_code)
+	restaurant_count = getNumberOfBusinesses("restaurant", zip_code)
+	restaurants[zip_code] = restaurant_count
+	#bars = getNumberOfBusinesses("bar", zip_code)
 
-restaurant_weight = restaurants_per_week/14;
-bar_weight = bars_per_week/14;
+print restaurants
