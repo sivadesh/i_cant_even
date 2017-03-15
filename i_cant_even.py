@@ -7,6 +7,8 @@ from yelpapi import YelpAPI
 
 work_address = sys.argv[1]
 travel_distance = sys.argv[2]
+restaurants_per_week = sys.argv[3]
+bars_per_week = sys.argv[4]
 
 def getWorkZipCode(work_address):
 	gmaps = googlemaps.Client(key='AIzaSyBw6qWv26jGHDDt2Hp0qqck9eLmxB8PxTw')
@@ -31,7 +33,7 @@ def getWorkZipCode(work_address):
 
 	return work_zip_code
 
-def getAllRadiusZipCodes(work_zip_code,travel_distance):
+def getAllRadiusZipCodes(work_zip_code, travel_distance):
 	# Get all zip codes in a radius of Travel Distance
 	request_url="https://www.zipcodeapi.com/rest/WKiZcyx6wskyBfJ4VLc08HpurGBqSBXPmgPyPmFlP0UrfEvbpIcypC3QiEhbgf1C/radius.json/"+work_zip_code+"/"+travel_distance+"/miles?minimal"
 	response = urllib2.urlopen(request_url)
@@ -39,14 +41,20 @@ def getAllRadiusZipCodes(work_zip_code,travel_distance):
 	print response_json['zip_codes']
 	return response_json['zip_codes']
 
-def getNumberOfRestaurants(zip_code):
+def getNumberOfBusinesses(business_type, zip_code):
+	# Get number of businesses per zip code
 	yelp_api = YelpAPI('Icci0UP1WX7R0wrGfLEYCw', 'lWMwaew0FlWFRZVXZIqIKjIhYneiPkFiIWioqk1YsdLkVgbRUGhgS9velfSGoioT')
 
-	search_results = yelp_api.search_query(term='restaurants', location=zip_code)
-	print str(zip_code) + " " +str(search_results['total'])
+	search_results = yelp_api.search_query(term=business_type, location=zip_code)
+	# print str(zip_code) + " " +str(search_results['total'])
+	return search_results['total']
 
 
 work_zip_code = getWorkZipCode(work_address)
 zip_codes = getAllRadiusZipCodes(work_zip_code,travel_distance)
 for zip_code in zip_codes:
-	getNumberOfRestaurants(zip_code)
+	restaurants = getNumberOfBusinesses("restaurant", zip_code)
+	bars = getNumberOfBusinesses("bar", zip_code)
+
+restaurant_weight = restaurants_per_week/14;
+bar_weight = bars_per_week/14;
