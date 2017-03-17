@@ -4,11 +4,13 @@ from datetime import datetime
 import urllib2
 import json
 from yelpapi import YelpAPI
+import xml.etree.ElementTree as ET
 
 work_address = sys.argv[1]
 travel_distance = sys.argv[2]
 restaurants_per_week = sys.argv[3]
 bars_per_week = sys.argv[4]
+school_importance = sys.argv[5]
 
 def getWorkZipCode(work_address):
 	gmaps = googlemaps.Client(key='AIzaSyBw6qWv26jGHDDt2Hp0qqck9eLmxB8PxTw')
@@ -50,17 +52,83 @@ def getNumberOfBusinesses(business_type, zip_code):
 	# print str(zip_code) + " " +str(search_results['total'])
 	for business in search_results['businesses']:
 		if(business['location']['zip_code'] == zip_code):
-			#print business['name'] + " " + business['location']['zip_code']
+			# print business['name'] + " " + business['location']['zip_code']
 			business_count += 1
 	return business_count
 
+def getStateCity(zip_code):
+	# Get State and city for given zip code
+	gmaps = googlemaps.Client(key='AIzaSyBw6qWv26jGHDDt2Hp0qqck9eLmxB8PxTw')
+
+	geocode = gmaps.geocode(address=zip_code)
+	
+	state_city = ["","",""]
+	for ac in geocode[0]['address_components']:
+		if(ac['types'][0] == "administrative_area_level_1"):
+			state_city[0] = ac['short_name']
+		if(ac['types'][0] == "locality"):
+			city = ac['short_name']
+			# Replace space with %20 for HTTP URL
+			state_city[1] = city.replace(" ", "%20")
+		if(ac['types'][0] == "country"):
+			state_city[2] = ac['short_name']
+	
+	return state_city
+
+def getSchoolRating(zip_code):
+	# TODO: Change argument to be state, city and only compute unique pairs.
+	# Reduces number of calls to getStateCity
+	state_city = getStateCity(zip_code)
+
+	if(state_city[2] != 'US'):
+		return 0
+
+	#Get ratings for each school district in city
+	request_url="http://api.greatschools.org/districts/"+state_city[0]+"/"+state_city[1]+"?key=n80ycnguaxzzb9e0np1qfgxx"
+	#print request_url
+	response = urllib2.urlopen(request_url)
+	root_xml = ET.parse(response).getroot()
+	
+	ratings=[]
+	for district in root_xml:
+		district_rating = district.find('districtRating')
+		if district_rating is not None:
+			ratings.append(int(district_rating.text))
+			
+	return float(sum(ratings))/len(ratings)
+
 
 work_zip_code = getWorkZipCode(work_address)
-zip_codes = getAllRadiusZipCodes(work_zip_code,travel_distance)
-restaurants = {}
-for zip_code in zip_codes:
-	restaurant_count = getNumberOfBusinesses("restaurant", zip_code)
-	restaurants[zip_code] = restaurant_count
-	#bars = getNumberOfBusinesses("bar", zip_code)
 
-print restaurants
+print "Getting all zip codes close to work address"
+zip_codes = getAllRadiusZipCodes(work_zip_code, travel_distance)
+
+holy_truth = {}
+
+for zip_code in zip_codes:
+	print "Getting number of restarants close to " +zip_code
+	restaurants = getNumberOfBusinesses("restaurant", zip_code)
+	print zip_code, restaurants
+	
+	# bars = getNumberOfBusinesses("bar", zip_code)
+	
+	print "Getting ratings of schools in " +zip_code
+	schools = getSchoolRating(zip_code)
+	print zip_code, schools
+
+	holy_truth[zip_code] = [restaurants, schools]
+
+# state_city = getStateCity("94043")
+# getSchoolRating("94087")
+
+# print holy_truth
+
+ranking = {}
+resaturant_weight = float(restaurants_per_week)/14
+
+for zip_code in holy_truth.keys():
+	ranking[zip_code] = (resaturant_weight * holy_truth[zip_code][0]) + (float(school_importance) * holy_truth[zip_code][1])
+
+# print ranking
+for zip_code in sorted(ranking, key=ranking.get, reverse = True):
+	print zip_code, ranking[zip_code]

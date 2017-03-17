@@ -2,6 +2,16 @@
 
 Example run: 
 
-$ python i_cant_even.py "zip 98104" 0.5 1 1
-[u'98151', u'98161', u'98171', u'98184', u'98104', u'98174', u'98164', u'98154']
-{u'98104': 34, u'98184': 0, u'98151': 0, u'98154': 1, u'98171': 0, u'98164': 0, u'98174': 0, u'98161': 1}
+$ python i_cant_even.py "2105 5th Ave Seattle" 0.8 1 1 0.8
+Getting all zip codes close to work address
+[u'98101', u'98121']
+Getting number of restarants close to 98101
+98101 19
+Getting ratings of schools in 98101
+98101 7.0
+Getting number of restarants close to 98121
+98121 31
+Getting ratings of schools in 98121
+98121 7.0
+98121 7.81428571429
+98101 6.95714285714
